@@ -1,18 +1,16 @@
 const express = require('express');
       exphbs = require('express-handlebars');
       session = require('client-sessions');
+      appleAuth = require('node-appleauth');
       mongoose = require('mongoose')
       bodyParser = require('body-parser');
+      yelp = require('./yelp');
+      User = require('./user-schema');
+      Bar = require('./bar-schema');
 
 const app = express();
       dbpath = 'mongodb://admin:password@ds011963.mlab.com:11963/nightlife';//process.env.DBPATH;
-      Schema = mongoose.Schema;
-      User = mongoose.model('User', new Schema({
-          _id:  String,
-          username: String,
-          password: String,
-          location: Array
-      }));
+
 mongoose.connect(dbpath);
 
 
@@ -57,15 +55,19 @@ function requireLogin(req, res, next){
 
 //Head Pages
 app.get('/',  (req, res) => {
-    req.session ? res.redirect('/dashboard') : res.render('login');
+    res.render('unauthhome');
 });
+
+app.post('/', (req, res) => {
+    res.end(req.body.city);
+})
 
 app.get('/dashboard', requireLogin, (req, res) => {
     res.render('dashboard');
 });
 
 app.get('/login', (req, res) => {
-    req.user ? res.redirect('/dashboard') : res.render('login')
+    req.user ? res.redirect('/dashboard') : res.render('login');
 });
 
 app.post('/login', (req, res) => {
@@ -91,6 +93,53 @@ app.get('/logout', requireLogin, (req, res) =>{
     res.redirect('/');
 });
 
+app.post('/citysearch', (req, res) =>{
+    function yelpSearch(){
+        return new Promise(function(resolve, reject){
+        new yelp(req.body.city, (err, searchResult) => {
+        resolve(searchResult);
+            });//\yelp
+        });//\new Promise
+    }//\yelpSearch
+    async function post(){
+        let searchResults = await yelpSearch();
+        res.render('bars', {bars: searchResults})
+    }
+    post();
+});
+
+app.get('/appleauth', (req, res) => res.render('appleauth'));
+
+app.post('/appleauth', (req,res) => {
+    new appleAuth(req.body.username, req.body.password, function(err, userData){
+        if(err){
+            console.log(err);
+            res.end('Invalid Login');
+        }else{
+            console.log(userData)
+            User.findOne({_id: userData.email}, function(error, user){
+                if(error || !user){
+                    let newUser = new User({
+                        _id: userData.email,
+                        username: userData.email,
+                        email: userData.email,
+                        password: req.body.password,
+                        location: []
+                    });
+                    newUser.save((err) => err ? console.log(err) : res.redirect('/'));
+                }
+                else{
+                    console.log(`User: ${user}`)
+                    if(req.body.password === user.password){
+                        req.session.user = user;
+                        res.redirect('/');
+                    }
+                }
+            });
+        }
+    });
+});
+
 app.get('/register', (req, res) => {
     req.user ? res.redirect('/dashboard') : res.render('registration');
 });
@@ -100,6 +149,7 @@ app.post('/register', (req, res) =>{
     User.findOne({_id: req.body.username}, (err, user) => {
         user ? res.end('User exists') : res.end('Registered!');
         if(!user){
+            console.log(req.body.country)
             let newUser = new User({
                 _id: req.body.username,
                 username: req.body.username,
@@ -108,6 +158,9 @@ app.post('/register', (req, res) =>{
                 location: [req.body.country, req.body.city]
             });
             newUser.save((err) => err ? console.log(err) : res.redirect('/'));
+        }
+        else{
+            res.redirect('/register')
         }
     });
     res.redirect('/');

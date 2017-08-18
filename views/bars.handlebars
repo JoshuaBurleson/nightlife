@@ -1,0 +1,30 @@
+{{#each bars}}
+    <div name={{this._id}}>
+        <h1>{{this._id}}</h1>
+        <h4 id="{{this._id}}_count">{{this.going_count}}</h4>
+        <button id="{{this._id}}-button" onclick="going('{{this._id}}')">Going</button>
+    </div>
+{{/each}}
+
+<script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+<script>
+ function going(id){
+     console.log(`${id} is going`)
+     let currentGoing = Number(jQuery(`#${id}_count`).text());
+     let going = currentGoing + 1
+     jQuery(`#${id}_count`).text(going);
+     //jQuery.post('/add')
+     jQuery(`#${id}-button`).text("Not Going");
+ }
+
+ function notGoing(id){
+     let going = Number(jQuery(`#${id}_count`).text()) - 1
+     jQuery(`#${id}_count`).text(going);
+     jQuery(`#${id}-button`).text("Going");
+     console.log('not going');
+     jQuery(`#${id}-button`).click(going(`${id}`));
+ }
+</script>

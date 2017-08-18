@@ -23,6 +23,7 @@
     "express-handlebars": "^3.0.0",
     "mongodb": "^2.2.30",
     "mongoose": "^4.11.6",
-    "node-appleauth": "^1.0.0"
+    "node-appleauth": "^1.0.0",
+    "yelp-fusion": "^1.0.3"
   }
 }
