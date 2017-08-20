@@ -23,15 +23,16 @@ class XretrieveYelpData{
                 location: location
             }).then(searchResult => {
                 let searchResults = searchResult.jsonBody.businesses.map(
-                    bar => bar.id
+                    (bar) => { return {id: bar.id, name: bar.name}}
                 );
                 let bars = [];
-                searchResults.forEach(barId =>{
-                    Bar.findOne({_id: barId}, (err, bar) => {
+                searchResults.forEach(yelpBar =>{
+                    Bar.findOne({_id: yelpBar.id}, (err, bar) => {
                         if(err || !bar){
-                            console.log('Creating New');
+                            console.log('Creating New ');
                             let newBar = new Bar({
-                                _id: barId,
+                                _id: yelpBar.id,
+                                name: yelpBar.name,
                                 going_count: 0
                             });
                             newBar.save((err) => {
@@ -39,19 +40,19 @@ class XretrieveYelpData{
                                 //bars.push({_id: barId, going_count: 0})
                                 //console.log(bars.length);
                             });
-                            bars.push({_id: barId, going_count: 0})
-                            console.log(bars.length);
+                            bars.push({_id: yelpBar.id, name: yelpBar.name, going_count: 0})
+                            //console.log(bars.length);
                         }
                         else{
-                            console.log(`returning bar`)
-                            console.log(`${bars.length}/${searchResults.length-1}`);
+                            //console.log(`returning bar`)
+                            //console.log(`${bars.length}/${searchResults.length-1}`);
                             bars.push(bar);
                         }
                     if(crossCheck(searchResults, bars)){
                         callback(null, bars);
                     }else{
-                        console.log(`Nope 1: ${bars}
-                                             ${bars.length} / ${searchResults.length-1}`)
+                        //console.log(`Nope 1: ${bars}
+                          //                   ${bars.length} / ${searchResults.length-1}`)
                     }
                     });
                 });

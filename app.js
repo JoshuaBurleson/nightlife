@@ -4,6 +4,7 @@ const express = require('express');
       appleAuth = require('node-appleauth');
       mongoose = require('mongoose')
       bodyParser = require('body-parser');
+      rqst = require('request');
       yelp = require('./yelp');
       User = require('./user-schema');
       Bar = require('./bar-schema');
@@ -60,10 +61,21 @@ app.get('/',  (req, res) => {
 
 app.post('/', (req, res) => {
     res.end(req.body.city);
-})
+});
 
 app.get('/dashboard', requireLogin, (req, res) => {
-    res.render('dashboard');
+    function yelpSearch(){
+        return new Promise(function(resolve, reject){
+        new yelp(req.session.user.location, (err, searchResult) => {
+        resolve(searchResult);
+            });//\yelp
+        });//\new Promise
+    }//\yelpSearch
+    async function post(){
+        let searchResults = await yelpSearch();
+        res.render('dashboard', {bars: searchResults})
+    }
+    post();
 });
 
 app.get('/login', (req, res) => {
@@ -80,7 +92,8 @@ app.post('/login', (req, res) => {
         }else{
             if(user.password === req.body.password){
                 req.session.user = user;
-                res.redirect('/');
+                res.redirect('/dashboard');
+                //res.redirect('/');
             }else{
                 res.end('Invalid password');
             }
@@ -124,7 +137,7 @@ app.post('/appleauth', (req,res) => {
                         username: userData.email,
                         email: userData.email,
                         password: req.body.password,
-                        location: []
+                        location: "NYC"
                     });
                     newUser.save((err) => err ? console.log(err) : res.redirect('/'));
                 }
@@ -147,7 +160,7 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) =>{
     console.log(req.body);
     User.findOne({_id: req.body.username}, (err, user) => {
-        user ? res.end('User exists') : res.end('Registered!');
+        //user ? res.end('User exists') : res.end('Registered!');
         if(!user){
             console.log(req.body.country)
             let newUser = new User({
@@ -155,7 +168,7 @@ app.post('/register', (req, res) =>{
                 username: req.body.username,
                 email: req.body.email,
                 password: req.body.password,
-                location: [req.body.country, req.body.city]
+                location: req.body.location
             });
             newUser.save((err) => err ? console.log(err) : res.redirect('/'));
         }
@@ -163,7 +176,38 @@ app.post('/register', (req, res) =>{
             res.redirect('/register')
         }
     });
-    res.redirect('/');
+});
+
+app.post('/update',requireLogin, (req, res) => {
+    const user = req.session.user._id;
+          barId = req.body.barId;
+          mode = req.body.mode;
+          console.log(`${user} ${mode} 1 to ${barId}`);
+          Bar.findOne({_id: barId}, (err, bar) => {
+              if(err || !bar){
+                  res.json({error: 'No such bar in database'});
+              }
+              else{
+                  let going = +bar.going_count + +mode;
+                  let usersGoing = bar.users_going;
+                  if(mode == "-1"){
+                    console.log(-1)
+                    let indexOfUser = usersGoing.indexOf(user);
+                    usersGoing.splice(indexOfUser, 1);
+                  }
+                  else{
+                      usersGoing.push(user);
+                  }
+                  Bar.update({_id: barId},{$set: {going_count: going, users_going: usersGoing}},(err, response) => {
+                      if(err){
+                          res.json({error: 'Error updating database'});
+                      }
+                      else{
+                          res.json({success: 'Succesfully updated database'});
+                      }
+                  });
+              }
+          });
 });
 
 const port = process.env.port || 3000;

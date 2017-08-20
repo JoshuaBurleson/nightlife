@@ -5,7 +5,7 @@ const mongoose = require('mongoose')
           username: String,
           email: String,
           password: String,
-          location: Array
+          location: String
       }));
 
 module.exports = User

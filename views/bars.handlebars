@@ -1,30 +1,48 @@
 {{#each bars}}
     <div name={{this._id}}>
-        <h1>{{this._id}}</h1>
-        <h4 id="{{this._id}}_count">{{this.going_count}}</h4>
-        <button id="{{this._id}}-button" onclick="going('{{this._id}}')">Going</button>
+        <h1>{{this.name}}</h1>
+        <h4 id="{{this._id}}-count">{{this.going_count}}</h4>
+        <button id="{{this._id}}-going-button" onclick="going('{{this._id}}')">Going</button>
+        <button id="{{this._id}}-not-going-button" onclick="notGoing('{{this._id}}')" style="display: none;">Not Going</button>
     </div>
 {{/each}}
 
-<script
-  src="https://code.jquery.com/jquery-3.2.1.min.js"
-  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-  crossorigin="anonymous"></script>
-<script>
- function going(id){
-     console.log(`${id} is going`)
-     let currentGoing = Number(jQuery(`#${id}_count`).text());
-     let going = currentGoing + 1
-     jQuery(`#${id}_count`).text(going);
-     //jQuery.post('/add')
-     jQuery(`#${id}-button`).text("Not Going");
- }
+{{#if user}}
+    <script
+    src="https://code.jquery.com/jquery-3.2.1.min.js"
+    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script>
+    <script>
+    function going(id){
+        console.log(`${id} is going`)
+        let currentGoing = Number(jQuery(`#${id}-count`).text());
+        let going = currentGoing + 1
+        jQuery(`#${id}-count`).text(going);
+        //jQuery(`#${id}-button`).text("Not Going");
+        jQuery.post('/update', {barId: id, mode: 1}, (res, status) => {
+            console.log(res);
+        });
+        jQuery(`#${id}-going-button`).hide();
+        jQuery(`#${id}-not-going-button`).show();
+    }
 
- function notGoing(id){
-     let going = Number(jQuery(`#${id}_count`).text()) - 1
-     jQuery(`#${id}_count`).text(going);
-     jQuery(`#${id}-button`).text("Going");
-     console.log('not going');
-     jQuery(`#${id}-button`).click(going(`${id}`));
- }
-</script>
+    function notGoing(id){
+        console.log(`${id} is going`)
+        let currentGoing = Number(jQuery(`#${id}-count`).text());
+        let going = currentGoing - 1
+        jQuery(`#${id}-count`).text(going);
+        //jQuery(`#${id}-button`).text("Not Going");
+        jQuery.post('/update', {barId: id, mode: -1}, (res, status) => {
+            console.log(res);
+        });
+        jQuery(`#${id}-not-going-button`).hide();
+        jQuery(`#${id}-going-button`).show();
+    }
+    </script>
+    {{else}}
+    <script>
+        function going(id){
+            window.location.replace('/login');
+        }
+    </script>
+{{/if}}
