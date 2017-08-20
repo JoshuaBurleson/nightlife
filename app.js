@@ -10,7 +10,7 @@ const express = require('express');
       Bar = require('./bar-schema');
 
 const app = express();
-      dbpath = 'mongodb://admin:password@ds011963.mlab.com:11963/nightlife';//process.env.DBPATH;
+      dbpath = process.env.DBPATH;
 
 mongoose.connect(dbpath);
 
@@ -18,7 +18,7 @@ mongoose.connect(dbpath);
 //Session Middleware
 app.use(session({
     cookieName:'session',
-    secret: 'YfUvPteMjMU3yFQzlwRF',//process.env.cookieSecret,
+    secret: process.env.COOKIESECRET,
     duration: 60*60*1000,
     activeDuration: 30*60*1000
 }));
@@ -47,7 +47,6 @@ app.use(bodyParser.urlencoded({extended: false}));
 //Handlebars Middleware
 app.set('view engine','handlebars');
 app.engine('handlebars', exphbs({defaultLayout:'layout'}));
-//app.set('views',path.join(__dirname,'views'));
 
 //Authorization Middleware
 function requireLogin(req, res, next){
@@ -93,7 +92,6 @@ app.post('/login', (req, res) => {
             if(user.password === req.body.password){
                 req.session.user = user;
                 res.redirect('/dashboard');
-                //res.redirect('/');
             }else{
                 res.end('Invalid password');
             }
@@ -160,7 +158,6 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) =>{
     console.log(req.body);
     User.findOne({_id: req.body.username}, (err, user) => {
-        //user ? res.end('User exists') : res.end('Registered!');
         if(!user){
             console.log(req.body.country)
             let newUser = new User({
@@ -173,7 +170,7 @@ app.post('/register', (req, res) =>{
             newUser.save((err) => err ? console.log(err) : res.redirect('/'));
         }
         else{
-            res.redirect('/register')
+            res.redirect('/login')
         }
     });
 });
